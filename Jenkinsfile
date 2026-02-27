@@ -2,41 +2,72 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "romannandish/mern-backend"
-        CONTAINER_NAME = "mern-backend-container"
-        PORT = "5000"
+        // Docker Hub Images
+        BACKEND_IMAGE = "romannandish/mern-backend"
+        FRONTEND_IMAGE = "romannandish/mern-frontend"
+
+        // Container Names
+        BACKEND_CONTAINER = "mern-backend-container"
+        FRONTEND_CONTAINER = "mern-frontend-container"
     }
 
     stages {
 
-       
+        /* ---------------- Pull Images ---------------- */
 
-        stage('Pull Docker Image') {
+        stage('Pull Backend Image') {
             steps {
-                sh 'docker pull $DOCKER_IMAGE:latest'
+                sh 'docker pull $BACKEND_IMAGE:latest'
             }
         }
 
-        stage('Stop Old Container') {
+        stage('Pull Frontend Image') {
+            steps {
+                sh 'docker pull $FRONTEND_IMAGE:latest'
+            }
+        }
+
+        /* ---------------- Stop Old Containers ---------------- */
+
+        stage('Stop Old Containers') {
             steps {
                 sh '''
-                docker stop $CONTAINER_NAME || true
-                docker rm $CONTAINER_NAME || true
+                docker stop $BACKEND_CONTAINER || true
+                docker rm $BACKEND_CONTAINER || true
+
+                docker stop $FRONTEND_CONTAINER || true
+                docker rm $FRONTEND_CONTAINER || true
                 '''
             }
         }
 
-        stage('Run New Container') {
+        /* ---------------- Run New Containers ---------------- */
+
+        stage('Run Backend Container') {
             steps {
                 sh '''
                 docker run -d \
-                --name $CONTAINER_NAME \
+                --name $BACKEND_CONTAINER \
                 -p 5000:5000 \
                 --restart always \
-                $DOCKER_IMAGE:latest
+                $BACKEND_IMAGE:latest
                 '''
             }
         }
+
+        stage('Run Frontend Container') {
+            steps {
+                sh '''
+                docker run -d \
+                --name $FRONTEND_CONTAINER \
+                -p 80:80 \
+                --restart always \
+                $FRONTEND_IMAGE:latest
+                '''
+            }
+        }
+
+        /* ---------------- Cleanup ---------------- */
 
         stage('Clean Old Images') {
             steps {
