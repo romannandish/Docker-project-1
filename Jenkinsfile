@@ -9,12 +9,7 @@ pipeline {
 
     stages {
 
-        stage('Pull Latest Code') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/yourusername/your-repo.git'
-            }
-        }
+       
 
         stage('Pull Docker Image') {
             steps {
