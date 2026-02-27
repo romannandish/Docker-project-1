@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "yourdockerhubusername/mern-backend"
+        DOCKER_IMAGE = "romannandish/mern-backend"
         CONTAINER_NAME = "mern-backend-container"
         PORT = "5000"
     }
