@@ -7,6 +7,15 @@ const registerUser = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
+    // Input validation
+    if (!username || !email || !password) {
+      return res.status(400).json({ msg: "Please provide username, email, and password" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ msg: "Password must be at least 6 characters long" });
+    }
+
     const userExists = await User.findOne({ username });
     if (userExists)
       return res.status(400).json({ msg: "User already exists" });
@@ -25,7 +34,7 @@ const registerUser = async (req, res) => {
     await newUser.save();
     res.status(201).json({ msg: "User registered successfully" });
   } catch (err) {
-    
+    console.error('Register error:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -38,6 +47,10 @@ const loginUser = async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    if (!username || !password) {
+      return res.status(400).json({ msg: "Please provide username and password" });
+    }
+
     const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
 
@@ -56,6 +69,7 @@ const loginUser = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -68,6 +82,7 @@ const getProfile = async (req, res) => {
 
     res.json(user);
   } catch (err) {
+    console.error('Get profile error:', err);
     res.status(500).json({ error: err.message });
   }
 };

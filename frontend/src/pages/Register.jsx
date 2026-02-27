@@ -30,11 +30,13 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("/register", formData);
+      const response = await axios.post("/register", formData);
       alert("Registration successful! You can now login.");
       navigate("/login");
     } catch (err) {
-      alert(err.response?.data?.msg || "Registration failed");
+      const errorMessage = err.response?.data?.msg || err.response?.data?.error || "Registration failed";
+      console.error('Registration error:', errorMessage);
+      alert(errorMessage);
     }
   };
 

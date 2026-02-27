@@ -10,10 +10,14 @@ app.use(express.json());
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/user', userRoutes);
 
+// MongoDB connection with better error handling
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.log(err));
+  .then(() => console.log('✓ MongoDB connected successfully'))
+  .catch((err) => {
+    console.error('✗ MongoDB connection error:', err.message);
+    process.exit(1);
+  });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✓ Server running on port ${PORT}`));

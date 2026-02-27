@@ -5,74 +5,84 @@ pipeline {
         // Docker Hub Images
         BACKEND_IMAGE = "romannandish/mern-backend"
         FRONTEND_IMAGE = "romannandish/mern-frontend"
-
-        // Container Names
-        BACKEND_CONTAINER = "mern-backend-container"
-        FRONTEND_CONTAINER = "mern-frontend-container"
+        REGISTRY_CREDENTIALS = credentials('docker-hub-credentials')
     }
 
     stages {
 
-        /* ---------------- Pull Images ---------------- */
+        /* =============== PULL IMAGES FROM DOCKER HUB =============== */
 
-        stage('Pull Backend Image') {
-            steps {
-                sh 'docker pull $BACKEND_IMAGE:latest'
-            }
-        }
-
-        stage('Pull Frontend Image') {
-            steps {
-                sh 'docker pull $FRONTEND_IMAGE:latest'
-            }
-        }
-
-        /* ---------------- Stop Old Containers ---------------- */
-
-        stage('Stop Old Containers') {
+        stage('Pull Images') {
             steps {
                 sh '''
-                docker stop $BACKEND_CONTAINER || true
-                docker rm $BACKEND_CONTAINER || true
-
-                docker stop $FRONTEND_CONTAINER || true
-                docker rm $FRONTEND_CONTAINER || true
+                    echo "Pulling Docker images from Docker Hub..."
+                    docker pull $BACKEND_IMAGE:latest || true
+                    docker pull $FRONTEND_IMAGE:latest || true
                 '''
             }
         }
 
-        /* ---------------- Run New Containers ---------------- */
+        /* =============== STOP & REMOVE OLD CONTAINERS =============== */
 
-        stage('Run Backend Container') {
+        stage('Stop Application') {
             steps {
                 sh '''
-                docker run -d \
-                --name $BACKEND_CONTAINER \
-                -p 5000:5000 \
-                --restart always \
-                $BACKEND_IMAGE:latest
+                    echo "Stopping existing docker-compose services..."
+                    cd /opt/mern-app
+                    docker-compose down -v || true
                 '''
             }
         }
 
-        stage('Run Frontend Container') {
+        /* =============== DEPLOY WITH DOCKER-COMPOSE =============== */
+
+        stage('Deploy Application') {
             steps {
                 sh '''
-                docker run -d \
-                --name $FRONTEND_CONTAINER \
-                -p 80:80 \
-                --restart always \
-                $FRONTEND_IMAGE:latest
+                    echo "Starting application with docker-compose..."
+                    cd /opt/mern-app
+                    docker-compose up -d
+                    echo "Waiting for services to start..."
+                    sleep 5
                 '''
             }
         }
 
-        /* ---------------- Cleanup ---------------- */
+        /* =============== HEALTH CHECK =============== */
 
-        stage('Clean Old Images') {
+        stage('Health Check') {
             steps {
-                sh 'docker image prune -f'
+                sh '''
+                    echo "Checking container health..."
+                    docker ps --filter "status=running"
+                    
+                    echo "Checking backend connectivity..."
+                    curl -f http://localhost:5000 || echo "Backend starting..."
+                    
+                    echo "Checking frontend..."
+                    curl -f http://localhost:3000 || echo "Frontend starting..."
+                '''
             }
+        }
+
+        /* =============== CLEANUP =============== */
+
+        stage('Cleanup') {
+            steps {
+                sh '''
+                    echo "Cleaning up unused images..."
+                    docker image prune -f
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✓ Pipeline executed successfully!"
+        }
+        failure {
+            echo "✗ Pipeline failed. Check logs above."
         }
     }
 }
